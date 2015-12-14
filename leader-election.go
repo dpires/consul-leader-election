@@ -6,13 +6,17 @@ import (
 	"github.com/hashicorp/consul/api"
 )
 
+type ILeaderElect interface {
+	GetSession(sessionName string)
+	GetConsulClient()
+}
+
 type LeaderElect struct {
 	Session string
 }
 
 func (le *LeaderElect) GetSession(sessionName string) {
-	config := api.DefaultConfig()
-	client, _ := api.NewClient(config)
+	client := le.GetConsulClient()
 	agent, _ := client.Agent().Self()
 	sessions, _, err := client.Session().List(nil)
 	for _, session := range sessions {
@@ -31,11 +35,16 @@ func (le *LeaderElect) GetSession(sessionName string) {
 	}
 }
 
+func (le *LeaderElect) GetConsulClient() (client *api.Client) {
+	config := api.DefaultConfig()
+	client, _ = api.NewClient(config)
+	return client
+}
+
 func main() {
 	le := LeaderElect{}
 	const leaderKey = "leader-election/leader"
-	config := api.DefaultConfig()
-	client, _ := api.NewClient(config)
+	client := le.GetConsulClient()
 	agent, _ := client.Agent().Self()
 	le.GetSession(leaderKey)
 
