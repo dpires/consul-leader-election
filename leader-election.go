@@ -7,19 +7,19 @@ import (
 	"time"
 )
 
-type ILeaderElect interface {
+type ILeaderElectionion interface {
 	GetSession(sessionName string)
 	GetConsulClient()
 	ElectLeader()
 }
 
-type LeaderElect struct {
+type LeaderElection struct {
 	Session       string
 	LeaderKey     string
 	WatchWaitTime int
 }
 
-func (le *LeaderElect) GetSession(sessionName string) {
+func (le *LeaderElection) GetSession(sessionName string) {
 	client := le.GetConsulClient()
 	agent, _ := client.Agent().Self()
 	sessions, _, err := client.Session().List(nil)
@@ -39,13 +39,13 @@ func (le *LeaderElect) GetSession(sessionName string) {
 	}
 }
 
-func (le *LeaderElect) GetConsulClient() (client *api.Client) {
+func (le *LeaderElection) GetConsulClient() (client *api.Client) {
 	config := api.DefaultConfig()
 	client, _ = api.NewClient(config)
 	return client
 }
 
-func (le *LeaderElect) ElectLeader() {
+func (le *LeaderElection) ElectLeader() {
 	client := le.GetConsulClient()
 	agent, _ := client.Agent().Self()
 	le.GetSession(le.LeaderKey)
@@ -65,18 +65,21 @@ func (le *LeaderElect) ElectLeader() {
 	if err != nil {
 		panic(err)
 	}
+
 	kv, _, _ := client.KV().Get(le.LeaderKey, nil)
+
 	if kv != nil && kv.Session != "" {
 		fmt.Println("Current leader: ", string(kv.Value))
 		fmt.Println("Leader Session: ", string(kv.Session))
 	}
 
 	time.Sleep(time.Duration(le.WatchWaitTime) * time.Second)
+
 	le.ElectLeader()
 }
 
 func main() {
-	le := LeaderElect{
+	le := LeaderElection{
 		LeaderKey:     "service/consul-notifications/leader",
 		WatchWaitTime: 10,
 	}
