@@ -12,12 +12,22 @@ func main() {
 	client, _ := api.NewClient(config)
 	agent, _ := client.Agent().Self()
 	// get session
-	sessionEntry := &api.SessionEntry{Name: leaderKey}
-	sessionID, _, err := client.Session().Create(sessionEntry, nil)
-	if err != nil {
-		panic(err)
+	sessions, _, err := client.Session().List(nil)
+	sessionID := ""
+	for _, session := range sessions {
+		if session.Name == leaderKey && session.Node == agent["Config"]["NodeName"] {
+			sessionID = session.ID
+			break
+		}
 	}
-	fmt.Println(sessionID)
+	if sessionID == "" {
+		fmt.Println("No sessions found, getting")
+		sessionEntry := &api.SessionEntry{Name: leaderKey}
+		sessionID, _, err = client.Session().Create(sessionEntry, nil)
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	pair := &api.KVPair{
 		Key:     leaderKey,
@@ -28,9 +38,13 @@ func main() {
 	// aquire key
 	aquired, _, err := client.KV().Acquire(pair, nil)
 
-	fmt.Println(pp)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(aquired)
+	fmt.Println("Aquired:", aquired)
+	kv, _, _ := client.KV().Get(leaderKey, nil)
+	if kv != nil && kv.Session != "" {
+		fmt.Println("Current leader: ", string(kv.Value))
+		fmt.Println("Leader Session: ", string(kv.Session))
+	}
 }
