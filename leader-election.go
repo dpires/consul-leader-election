@@ -6,33 +6,43 @@ import (
 	"github.com/hashicorp/consul/api"
 )
 
-func main() {
-	const leaderKey = "leader-election/leader"
+type LeaderElect struct {
+	Session string
+}
+
+func (le *LeaderElect) GetSession(sessionName string) {
 	config := api.DefaultConfig()
 	client, _ := api.NewClient(config)
 	agent, _ := client.Agent().Self()
-	// get session
 	sessions, _, err := client.Session().List(nil)
-	sessionID := ""
 	for _, session := range sessions {
-		if session.Name == leaderKey && session.Node == agent["Config"]["NodeName"] {
-			sessionID = session.ID
+		if session.Name == sessionName && session.Node == agent["Config"]["NodeName"] {
+			le.Session = session.ID
 			break
 		}
 	}
-	if sessionID == "" {
+	if le.Session == "" {
 		fmt.Println("No sessions found, getting")
-		sessionEntry := &api.SessionEntry{Name: leaderKey}
-		sessionID, _, err = client.Session().Create(sessionEntry, nil)
+		sessionEntry := &api.SessionEntry{Name: sessionName}
+		le.Session, _, err = client.Session().Create(sessionEntry, nil)
 		if err != nil {
 			panic(err)
 		}
 	}
+}
+
+func main() {
+	le := LeaderElect{}
+	const leaderKey = "leader-election/leader"
+	config := api.DefaultConfig()
+	client, _ := api.NewClient(config)
+	agent, _ := client.Agent().Self()
+	le.GetSession(leaderKey)
 
 	pair := &api.KVPair{
 		Key:     leaderKey,
 		Value:   []byte(agent["Config"]["NodeName"].(string)),
-		Session: sessionID,
+		Session: le.Session,
 	}
 	//	_, err = client.KV().Put(pair, nil)
 	// aquire key
