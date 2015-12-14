@@ -12,7 +12,8 @@ type ILeaderElect interface {
 }
 
 type LeaderElect struct {
-	Session string
+	Session   string
+	LeaderKey string
 }
 
 func (le *LeaderElect) GetSession(sessionName string) {
@@ -42,14 +43,13 @@ func (le *LeaderElect) GetConsulClient() (client *api.Client) {
 }
 
 func main() {
-	le := LeaderElect{}
-	const leaderKey = "leader-election/leader"
+	le := LeaderElect{LeaderKey: "leader-election/leader"}
 	client := le.GetConsulClient()
 	agent, _ := client.Agent().Self()
-	le.GetSession(leaderKey)
+	le.GetSession(le.LeaderKey)
 
 	pair := &api.KVPair{
-		Key:     leaderKey,
+		Key:     le.LeaderKey,
 		Value:   []byte(agent["Config"]["NodeName"].(string)),
 		Session: le.Session,
 	}
@@ -61,7 +61,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println("Aquired:", aquired)
-	kv, _, _ := client.KV().Get(leaderKey, nil)
+	kv, _, _ := client.KV().Get(le.LeaderKey, nil)
 	if kv != nil && kv.Session != "" {
 		fmt.Println("Current leader: ", string(kv.Value))
 		fmt.Println("Leader Session: ", string(kv.Session))
