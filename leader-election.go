@@ -4,16 +4,19 @@ package main
 import (
 	"fmt"
 	"github.com/hashicorp/consul/api"
+	"time"
 )
 
 type ILeaderElect interface {
 	GetSession(sessionName string)
 	GetConsulClient()
+	ElectLeader()
 }
 
 type LeaderElect struct {
-	Session   string
-	LeaderKey string
+	Session       string
+	LeaderKey     string
+	WatchWaitTime int
 }
 
 func (le *LeaderElect) GetSession(sessionName string) {
@@ -42,8 +45,7 @@ func (le *LeaderElect) GetConsulClient() (client *api.Client) {
 	return client
 }
 
-func main() {
-	le := LeaderElect{LeaderKey: "leader-election/leader"}
+func (le *LeaderElect) ElectLeader() {
 	client := le.GetConsulClient()
 	agent, _ := client.Agent().Self()
 	le.GetSession(le.LeaderKey)
@@ -53,17 +55,30 @@ func main() {
 		Value:   []byte(agent["Config"]["NodeName"].(string)),
 		Session: le.Session,
 	}
-	//	_, err = client.KV().Put(pair, nil)
-	// aquire key
+
 	aquired, _, err := client.KV().Acquire(pair, nil)
+
+	if aquired {
+		fmt.Println("Aquired")
+	}
 
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Aquired:", aquired)
 	kv, _, _ := client.KV().Get(le.LeaderKey, nil)
 	if kv != nil && kv.Session != "" {
 		fmt.Println("Current leader: ", string(kv.Value))
 		fmt.Println("Leader Session: ", string(kv.Session))
 	}
+
+	time.Sleep(time.Duration(le.WatchWaitTime) * time.Second)
+	le.ElectLeader()
+}
+
+func main() {
+	le := LeaderElect{
+		LeaderKey:     "service/consul-notifications/leader",
+		WatchWaitTime: 10,
+	}
+	le.ElectLeader()
 }
