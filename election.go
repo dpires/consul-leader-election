@@ -1,11 +1,11 @@
-package election
+package main
 
 import (
 	"fmt"
 	"github.com/hashicorp/consul/api"
 )
 
-type ILeaderElectionion interface {
+type ILeaderElection interface {
 	GetSession(sessionName string)
 	GetConsulClient()
 	ElectLeader()

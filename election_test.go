@@ -1,4 +1,4 @@
-package election
+package main
 
 import (
 	. "github.com/franela/goblin"
@@ -13,7 +13,6 @@ func TestLeaderElection(t *testing.T) {
 			le := &LeaderElection{LeaderKey: "service/test/leader"}
 			le.ElectLeader()
 			g.Assert(le.IsLeader()).IsTrue()
-
 		})
 	})
 
