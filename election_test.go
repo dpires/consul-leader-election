@@ -1,4 +1,4 @@
-package main
+package election
 
 import (
 	. "github.com/franela/goblin"
