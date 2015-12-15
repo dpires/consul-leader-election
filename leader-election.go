@@ -11,12 +11,29 @@ type ILeaderElectionion interface {
 	GetSession(sessionName string)
 	GetConsulClient()
 	ElectLeader()
+	IsLeader()
 }
 
 type LeaderElection struct {
 	Session       string
 	LeaderKey     string
 	WatchWaitTime int
+}
+
+func (le *LeaderElection) IsLeader() bool {
+	client := le.GetConsulClient()
+	agent, _ := client.Agent().Self()
+	le.GetSession(le.LeaderKey)
+	kv, _, err := client.KV().Get(le.LeaderKey, nil)
+	if err != nil {
+		fmt.Printf("Unable to check for leadership\n")
+		return false
+	}
+	if kv == nil {
+		fmt.Printf("Leadership key is missing")
+		return false
+	}
+	return agent["Config"]["NodeName"] == string(kv.Value) && le.Session == kv.Session
 }
 
 func (le *LeaderElection) GetSession(sessionName string) {
@@ -48,24 +65,28 @@ func (le *LeaderElection) GetConsulClient() (client *api.Client) {
 func (le *LeaderElection) ElectLeader() {
 	client := le.GetConsulClient()
 	agent, _ := client.Agent().Self()
-	le.GetSession(le.LeaderKey)
 
-	pair := &api.KVPair{
-		Key:     le.LeaderKey,
-		Value:   []byte(agent["Config"]["NodeName"].(string)),
-		Session: le.Session,
+	if !le.IsLeader() {
+
+		le.GetSession(le.LeaderKey)
+
+		pair := &api.KVPair{
+			Key:     le.LeaderKey,
+			Value:   []byte(agent["Config"]["NodeName"].(string)),
+			Session: le.Session,
+		}
+
+		aquired, _, err := client.KV().Acquire(pair, nil)
+
+		if aquired {
+			fmt.Printf("%s is now the leader\n", agent["Config"]["NodeName"])
+		}
+
+		if err != nil {
+			panic(err)
+		}
+
 	}
-
-	aquired, _, err := client.KV().Acquire(pair, nil)
-
-	if aquired {
-		fmt.Println("Aquired")
-	}
-
-	if err != nil {
-		panic(err)
-	}
-
 	kv, _, _ := client.KV().Get(le.LeaderKey, nil)
 
 	if kv != nil && kv.Session != "" {
