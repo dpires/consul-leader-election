@@ -11,6 +11,7 @@ type ILeaderElection interface {
 	GetConsulClient()
 	ElectLeader()
 	IsLeader()
+	CancelElection()
 }
 
 type LeaderElection struct {
@@ -18,6 +19,10 @@ type LeaderElection struct {
 	LeaderKey     string
 	WatchWaitTime int
 	StopElection  chan bool
+}
+
+func (le *LeaderElection) CancelElection() {
+	le.StopElection <- true
 }
 
 func (le *LeaderElection) IsLeader() bool {

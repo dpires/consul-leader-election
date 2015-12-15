@@ -14,7 +14,7 @@ func TestLeaderElection(t *testing.T) {
 			le := LeaderElection{LeaderKey: "service/leader-election/leader", StopElection: make(chan bool), WatchWaitTime: 1}
 			go le.ElectLeader()
 			time.Sleep(3 * time.Second)
-			le.StopElection <- true
+			le.CancelElection()
 			g.Assert(le.IsLeader()).IsTrue()
 		})
 	})
