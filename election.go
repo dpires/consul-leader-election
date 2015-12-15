@@ -1,10 +1,8 @@
-package main
+package election
 
-// Sample leader election implementation from http://consul.io/docs/guides/leader-election.html
 import (
 	"fmt"
 	"github.com/hashicorp/consul/api"
-	"time"
 )
 
 type ILeaderElectionion interface {
@@ -87,22 +85,12 @@ func (le *LeaderElection) ElectLeader() {
 		}
 
 	}
+
 	kv, _, _ := client.KV().Get(le.LeaderKey, nil)
 
 	if kv != nil && kv.Session != "" {
 		fmt.Println("Current leader: ", string(kv.Value))
 		fmt.Println("Leader Session: ", string(kv.Session))
 	}
-
-	time.Sleep(time.Duration(le.WatchWaitTime) * time.Second)
-
-	le.ElectLeader()
 }
 
-func main() {
-	le := LeaderElection{
-		LeaderKey:     "service/consul-notifications/leader",
-		WatchWaitTime: 10,
-	}
-	le.ElectLeader()
-}
