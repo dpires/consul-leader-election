@@ -3,6 +3,7 @@ package election
 import (
 	"fmt"
 	"github.com/hashicorp/consul/api"
+	"time"
 )
 
 type ILeaderElection interface {
@@ -16,6 +17,7 @@ type LeaderElection struct {
 	Session       string
 	LeaderKey     string
 	WatchWaitTime int
+	StopElection  chan bool
 }
 
 func (le *LeaderElection) IsLeader() bool {
@@ -63,34 +65,43 @@ func (le *LeaderElection) GetConsulClient() (client *api.Client) {
 func (le *LeaderElection) ElectLeader() {
 	client := le.GetConsulClient()
 	agent, _ := client.Agent().Self()
+	stop := false
+	for !stop {
+		select {
+		case <-le.StopElection:
+			stop = true
+			fmt.Println("Stopping election")
+		default:
+			if !le.IsLeader() {
 
-	if !le.IsLeader() {
+				le.GetSession(le.LeaderKey)
 
-		le.GetSession(le.LeaderKey)
+				pair := &api.KVPair{
+					Key:     le.LeaderKey,
+					Value:   []byte(agent["Config"]["NodeName"].(string)),
+					Session: le.Session,
+				}
 
-		pair := &api.KVPair{
-			Key:     le.LeaderKey,
-			Value:   []byte(agent["Config"]["NodeName"].(string)),
-			Session: le.Session,
+				aquired, _, err := client.KV().Acquire(pair, nil)
+
+				if aquired {
+					fmt.Printf("%s is now the leader\n", agent["Config"]["NodeName"])
+				}
+
+				if err != nil {
+					panic(err)
+				}
+
+			}
+
+			kv, _, _ := client.KV().Get(le.LeaderKey, nil)
+
+			if kv != nil && kv.Session != "" {
+				fmt.Println("Current leader: ", string(kv.Value))
+				fmt.Println("Leader Session: ", string(kv.Session))
+			}
+
+			time.Sleep(time.Duration(le.WatchWaitTime) * time.Second)
 		}
-
-		aquired, _, err := client.KV().Acquire(pair, nil)
-
-		if aquired {
-			fmt.Printf("%s is now the leader\n", agent["Config"]["NodeName"])
-		}
-
-		if err != nil {
-			panic(err)
-		}
-
-	}
-
-	kv, _, _ := client.KV().Get(le.LeaderKey, nil)
-
-	if kv != nil && kv.Session != "" {
-		fmt.Println("Current leader: ", string(kv.Value))
-		fmt.Println("Leader Session: ", string(kv.Session))
 	}
 }
-
