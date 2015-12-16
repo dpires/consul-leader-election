@@ -3,9 +3,9 @@ before_install:
 - curl -L -o /tmp/consul_0.6.0_linux_amd64.zip https://releases.hashicorp.com/consul/0.6.0/consul_0.6.0_linux_amd64.zip
 - unzip /tmp/consul_0.6.0_linux_amd64.zip
 - "./consul agent -server -bootstrap -bind=127.0.0.1 -data-dir=/tmp &"
-install:
 - go get golang.org/x/tools/cmd/cover
 - go get github.com/mattn/goveralls
+
 script:
 - go test -v -covermode=count -coverprofile=coverage.out
 - "$HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken
