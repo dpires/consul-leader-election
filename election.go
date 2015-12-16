@@ -25,6 +25,22 @@ func (le *LeaderElection) CancelElection() {
 	le.StopElection <- true
 }
 
+func (le *LeaderElection) StepDown() error {
+    if le.IsLeader() {
+	client := le.GetConsulClient()
+	agent, _ := client.Agent().Self()
+	le.GetSession(le.LeaderKey)
+        key := &api.KVPair{Key: le.LeaderKey, Value: []byte(agent["Config"]["NodeName"].(string)), Session: le.Session}
+        released, _, err := client.KV().Release(key, nil)
+        if !released || err != nil {
+            return err
+        } else {
+            fmt.Println("Released leadership")
+        }
+    }
+    return nil
+}
+
 func (le *LeaderElection) IsLeader() bool {
 	client := le.GetConsulClient()
 	agent, _ := client.Agent().Self()

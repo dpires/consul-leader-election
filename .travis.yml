@@ -1,7 +1,16 @@
----
 language: go
-
 before_install:
-    - curl -L -o /tmp/consul_0.6.0_linux_amd64.zip https://releases.hashicorp.com/consul/0.6.0/consul_0.6.0_linux_amd64.zip
-    - unzip /tmp/consul_0.6.0_linux_amd64.zip
-    - ./consul agent -server -bootstrap -bind=127.0.0.1 -data-dir=/tmp &
+- curl -L -o /tmp/consul_0.6.0_linux_amd64.zip https://releases.hashicorp.com/consul/0.6.0/consul_0.6.0_linux_amd64.zip
+- unzip /tmp/consul_0.6.0_linux_amd64.zip
+- "./consul agent -server -bootstrap -bind=127.0.0.1 -data-dir=/tmp &"
+install:
+- go get golang.org/x/tools/cmd/cover
+- go get github.com/mattn/goveralls
+script:
+- go test -v -covermode=count -coverprofile=coverage.out
+- "$HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken
+  $COVERALLS_TOKEN"
+
+env:
+  global:
+    secure: iSaO0+bO7dYwx8NCJE9Xx17x99V5Yb7o8sTrITsYRmXrH5660M8nFnSqM2CVGY0k6BiV25zb5LxEzuLezbA0jTjvM1CPUSEdAZfX0wmwUqZFBsIQFzs9k7cQyT5iQVm7BzQtcPAI54RrxZfjgu37+fYPTrFJby3Oeiv2RYYCjRv8MNj/YCoJn+k7Kwh+bXtQzN4vMNINdN7ynuRwRA7QiOKswe74Bs/6D3q+h/12gTdE6ZC/ODOShnykfibvJ0McDj97zkgG06z5o7wqTBKrZIZXbbboJHqDtzKLM/N/O12GA0lW/Pl1PYDWXLUNIU2Obx0xGHdVDDk0cF7tBolqroRB8vvZ5JIGIQuUQBVECFpzXnzExBULv227ioWFQgW+xezgtJal+864TunA7p+cAOPLv+KqL08faiRf5MJomlpE+Lqkp4o27ITZdg94bbBFvf7GB9gTDvzkZ36By75ULl+wvNJwFYtJM0+BDa2QzKEMz5q7ahdvLrlL7t9vQtqYlevQNma1JZ+BhIkZew9fhyAAEq4d3DhfHcBic/k53fHVR1J8P00n45zPGAS7kM6NTMerVVyYDrVhKdW5QoBeK3nFTpUaFxse1iB+2WAGKcG+iFqHB+03k/a/J7XCsIluMkYqZl4bOvCaCjRLAA2mJr/MCns0+hfkW265j4uIu2g=
