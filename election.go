@@ -1,9 +1,9 @@
 package election
 
 import (
-	"fmt"
-	"github.com/hashicorp/consul/api"
 	"time"
+	"github.com/hashicorp/consul/api"
+        log "github.com/Sirupsen/logrus"
 )
 
 type ILeaderElection interface {
@@ -35,7 +35,7 @@ func (le *LeaderElection) StepDown() error {
         if !released || err != nil {
             return err
         } else {
-            fmt.Println("Released leadership")
+            log.Info("Released leadership")
         }
     }
     return nil
@@ -47,11 +47,11 @@ func (le *LeaderElection) IsLeader() bool {
 	le.GetSession(le.LeaderKey)
 	kv, _, err := client.KV().Get(le.LeaderKey, nil)
 	if err != nil {
-		fmt.Printf("Unable to check for leadership\n")
+		log.Info("Unable to check for leadership")
 		return false
 	}
 	if kv == nil {
-		fmt.Printf("Leadership key is missing")
+		log.Info("Leadership key is missing")
 		return false
 	}
 	return agent["Config"]["NodeName"] == string(kv.Value) && le.Session == kv.Session
@@ -68,7 +68,7 @@ func (le *LeaderElection) GetSession(sessionName string) {
 		}
 	}
 	if le.Session == "" {
-		fmt.Println("No sessions found, getting")
+		log.Info("No sessions found, getting")
 		sessionEntry := &api.SessionEntry{Name: sessionName}
 		le.Session, _, err = client.Session().Create(sessionEntry, nil)
 		if err != nil {
@@ -91,7 +91,7 @@ func (le *LeaderElection) ElectLeader() {
 		select {
 		case <-le.StopElection:
 			stop = true
-			fmt.Println("Stopping election")
+			log.Info("Stopping election")
 		default:
 			if !le.IsLeader() {
 
@@ -106,7 +106,7 @@ func (le *LeaderElection) ElectLeader() {
 				aquired, _, err := client.KV().Acquire(pair, nil)
 
 				if aquired {
-					fmt.Printf("%s is now the leader\n", agent["Config"]["NodeName"])
+					log.Infof("%s is now the leader", agent["Config"]["NodeName"])
 				}
 
 				if err != nil {
@@ -118,8 +118,8 @@ func (le *LeaderElection) ElectLeader() {
 			kv, _, _ := client.KV().Get(le.LeaderKey, nil)
 
 			if kv != nil && kv.Session != "" {
-				fmt.Println("Current leader: ", string(kv.Value))
-				fmt.Println("Leader Session: ", string(kv.Session))
+				log.Info("Current leader: ", string(kv.Value))
+				log.Info("Leader Session: ", string(kv.Session))
 			}
 
 			time.Sleep(time.Duration(le.WatchWaitTime) * time.Second)
