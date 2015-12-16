@@ -1,9 +1,9 @@
 package election
 
 import (
-	"time"
+	log "github.com/Sirupsen/logrus"
 	"github.com/hashicorp/consul/api"
-        log "github.com/Sirupsen/logrus"
+	"time"
 )
 
 type ILeaderElection interface {
@@ -26,19 +26,19 @@ func (le *LeaderElection) CancelElection() {
 }
 
 func (le *LeaderElection) StepDown() error {
-    if le.IsLeader() {
-	client := le.GetConsulClient()
-	agent, _ := client.Agent().Self()
-	le.GetSession(le.LeaderKey)
-        key := &api.KVPair{Key: le.LeaderKey, Value: []byte(agent["Config"]["NodeName"].(string)), Session: le.Session}
-        released, _, err := client.KV().Release(key, nil)
-        if !released || err != nil {
-            return err
-        } else {
-            log.Info("Released leadership")
-        }
-    }
-    return nil
+	if le.IsLeader() {
+		client := le.GetConsulClient()
+		agent, _ := client.Agent().Self()
+		le.GetSession(le.LeaderKey)
+		key := &api.KVPair{Key: le.LeaderKey, Value: []byte(agent["Config"]["NodeName"].(string)), Session: le.Session}
+		released, _, err := client.KV().Release(key, nil)
+		if !released || err != nil {
+			return err
+		} else {
+			log.Info("Released leadership")
+		}
+	}
+	return nil
 }
 
 func (le *LeaderElection) IsLeader() bool {
