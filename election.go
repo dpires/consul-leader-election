@@ -8,10 +8,11 @@ import (
 
 type ILeaderElection interface {
 	GetSession(sessionName string)
-	GetConsulClient()
+	GetConsulClient() *api.Client
 	ElectLeader()
-	IsLeader()
+	IsLeader() bool
 	CancelElection()
+	StepDown() error
 }
 
 type LeaderElection struct {
@@ -68,7 +69,7 @@ func (le *LeaderElection) GetSession(sessionName string) {
 		}
 	}
 	if le.Session == "" {
-		log.Info("No sessions found, getting")
+		log.Info("No leadership sessions found, creating...")
 		sessionEntry := &api.SessionEntry{Name: sessionName}
 		le.Session, _, err = client.Session().Create(sessionEntry, nil)
 		if err != nil {
