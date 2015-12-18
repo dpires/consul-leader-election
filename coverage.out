@@ -1,0 +1,27 @@
+mode: set
+github.com/dpires/consul-leader-election/consul-client.go:12.76,15.35 3 0
+github.com/dpires/consul-leader-election/consul-client.go:21.2,21.22 1 0
+github.com/dpires/consul-leader-election/consul-client.go:15.35,16.58 1 0
+github.com/dpires/consul-leader-election/consul-client.go:16.58,18.9 2 0
+github.com/dpires/consul-leader-election/consul-client.go:21.22,25.17 4 0
+github.com/dpires/consul-leader-election/consul-client.go:25.17,26.14 1 0
+github.com/dpires/consul-leader-election/consul-client.go:31.77,42.2 3 0
+github.com/dpires/consul-leader-election/consul-client.go:44.47,47.2 2 0
+github.com/dpires/consul-leader-election/consul-client.go:49.60,53.2 2 0
+github.com/dpires/consul-leader-election/election.go:24.44,26.2 1 1
+github.com/dpires/consul-leader-election/election.go:29.44,33.2 2 1
+github.com/dpires/consul-leader-election/election.go:35.43,41.15 5 1
+github.com/dpires/consul-leader-election/election.go:46.2,46.61 1 1
+github.com/dpires/consul-leader-election/election.go:41.15,44.3 2 0
+github.com/dpires/consul-leader-election/election.go:48.81,51.2 1 1
+github.com/dpires/consul-leader-election/election.go:59.41,63.12 4 1
+github.com/dpires/consul-leader-election/election.go:63.12,64.10 1 1
+github.com/dpires/consul-leader-election/election.go:65.3,67.33 2 1
+github.com/dpires/consul-leader-election/election.go:68.3,69.22 1 1
+github.com/dpires/consul-leader-election/election.go:85.4,87.37 2 1
+github.com/dpires/consul-leader-election/election.go:92.4,92.61 1 1
+github.com/dpires/consul-leader-election/election.go:69.22,75.16 3 0
+github.com/dpires/consul-leader-election/election.go:79.5,79.19 1 0
+github.com/dpires/consul-leader-election/election.go:75.16,77.6 1 0
+github.com/dpires/consul-leader-election/election.go:79.19,80.16 1 0
+github.com/dpires/consul-leader-election/election.go:87.37,90.5 2 1
