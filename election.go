@@ -9,8 +9,9 @@ import (
 type ConsulInterface interface {
 	GetAgentName() string
 	GetKey(string) *api.KVPair
+	ReleaseKey(*api.KVPair) (bool, error)
 	GetSession(string, *LeaderElection)
-	AquireKey(string, string) (bool, error)
+	AquireKey(string, string, *LeaderElection) (bool, error)
 }
 
 type LeaderElection struct {
@@ -18,25 +19,33 @@ type LeaderElection struct {
 	LeaderKey     string
 	WatchWaitTime int
 	StopElection  chan bool
-	Client       ConsulInterface 
+	Client        ConsulInterface
 }
 
 func (le *LeaderElection) CancelElection() {
 	le.StopElection <- true
 }
-type GetSessionFunc func(string, *LeaderElection) 
 
-func myfu(name string, le *LeaderElection) {
-
-	client := le.Client
-	client.GetSession(name, le)
+func (le *LeaderElection) StepDown() error {
+	if le.IsLeader() {
+		client := le.Client
+		name := client.GetAgentName()
+		le.GetSession(le.LeaderKey)
+		key := &api.KVPair{Key: le.LeaderKey, Value: []byte(name), Session: le.Session}
+		released, err := client.ReleaseKey(key)
+		if !released || err != nil {
+			return err
+		} else {
+			log.Info("Released leadership")
+		}
+	}
+	return nil
 }
 
 func (le *LeaderElection) IsLeader() bool {
 	client := le.Client
 	name := client.GetAgentName()
-//	le.GetSession(le.LeaderKey)
-        le.GetSession(myfu, le.LeaderKey)
+	le.GetSession(le.LeaderKey)
 	kv := client.GetKey(le.LeaderKey)
 	if kv == nil {
 		log.Info("Leadership key is missing")
@@ -45,16 +54,10 @@ func (le *LeaderElection) IsLeader() bool {
 
 	return name == string(kv.Value) && le.Session == kv.Session
 }
-func (le *LeaderElection) GetSession(myFunc GetSessionFunc, sessionName string) {
-        
-        myFunc(sessionName, le)
-}
-/*
 func (le *LeaderElection) GetSession(sessionName string) {
 	client := le.Client
 	client.GetSession(sessionName, le)
 }
-*/
 
 func (le *LeaderElection) ElectLeader() {
 	client := le.Client
@@ -68,16 +71,16 @@ func (le *LeaderElection) ElectLeader() {
 		default:
 			if !le.IsLeader() {
 
-				le.GetSession(myfu, le.LeaderKey)//le.LeaderKey)
+				le.GetSession(le.LeaderKey)
 
-				aquired, err := client.AquireKey(le.LeaderKey, le.Session)
+				aquired, err := client.AquireKey(le.LeaderKey, le.Session, le)
 
 				if aquired {
 					log.Infof("%s is now the leader", name)
 				}
 
 				if err != nil {
-					panic(err)
+					log.Warn(err)
 				}
 
 			}

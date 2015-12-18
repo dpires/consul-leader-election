@@ -1,4 +1,4 @@
-package election
+package client
 
 import (
 	log "github.com/Sirupsen/logrus"
@@ -23,12 +23,12 @@ func (cc *ConsulClient) GetSession(sessionName string, le *LeaderElection) {
 		sessionEntry := &api.SessionEntry{Name: sessionName}
 		le.Session, _, err = cc.Client.Session().Create(sessionEntry, nil)
 		if err != nil {
-			panic(err)
+			log.Warn(err)
 		}
 	}
 }
 
-func (cc *ConsulClient) AquireKey(key string, session string) (bool, error) {
+func (cc *ConsulClient) AquireKey(key string, session string, le *LeaderElection) (bool, error) {
 
 	pair := &api.KVPair{
 		Key:     key,
@@ -50,4 +50,9 @@ func (cc *ConsulClient) GetKey(keyName string) *api.KVPair {
 	kv, _, _ := cc.Client.KV().Get(keyName, nil)
 	return kv
 
+}
+
+func (cc *ConsulClient) ReleaseKey(key *api.KVPair) (bool, error) {
+	released, _, err := cc.Client.KV().Release(key, nil)
+	return release, err
 }

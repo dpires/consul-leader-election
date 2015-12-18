@@ -1,6 +1,7 @@
 package election
 
 import (
+	"errors"
 	. "github.com/franela/goblin"
 	"github.com/hashicorp/consul/api"
 	"testing"
@@ -8,7 +9,10 @@ import (
 )
 
 type FakeClient struct {
-	Key string
+	Key             string
+	GetKeyOutput    string
+	AquireKeyError  bool
+	ReleaseKeyError bool
 }
 
 type FakeConsulClient struct {
@@ -20,12 +24,30 @@ func (fcc *FakeConsulClient) GetAgentName() string {
 }
 func (fcc *FakeConsulClient) GetKey(key string) *api.KVPair {
 	kv := &api.KVPair{Key: key, Value: []byte("my node"), Session: fcc.Client.Key}
-	return kv
+	if fcc.Client.GetKeyOutput == "kv" {
+		return kv
+	}
+	return nil
 }
+
+func (fcc *FakeConsulClient) ReleaseKey(keyPair *api.KVPair) (bool, error) {
+	if fcc.Client.ReleaseKeyError {
+		return false, errors.New("ERROR RELEASE KEY")
+	}
+	fcc.Client.GetKeyOutput = ""
+	return true, nil
+}
+
 func (fcc *FakeConsulClient) GetSession(name string, le *LeaderElection) {
-	le.Session = name 
+	le.Session = name
 }
-func (fcc *FakeConsulClient) AquireKey(key string, session string) (bool, error) {
+
+func (fcc *FakeConsulClient) AquireKey(key string, session string, le *LeaderElection) (bool, error) {
+	if fcc.Client.AquireKeyError {
+		return false, errors.New("ERROR")
+	}
+	le.Session = fcc.Client.Key
+	fcc.Client.GetKeyOutput = "kv"
 	return true, nil
 }
 
@@ -33,36 +55,104 @@ func TestLeaderElection(t *testing.T) {
 
 	g := Goblin(t)
 	g.Describe("LeaderElection", func() {
-		g.It("can become leader", func() {
-			fakeClient := FakeClient{Key: "xservice/leader-election/leader"}
+		g.It("StepDown() Failure", func() {
+			fakeClient := FakeClient{Key: "service/leader-election/leader", GetKeyOutput: "kv", ReleaseKeyError: true}
 			fake := &FakeConsulClient{Client: fakeClient}
 			le := LeaderElection{
-				LeaderKey:     "xservice/leader-election/leader",
+				LeaderKey:     fakeClient.Key,
+				StopElection:  make(chan bool),
+				WatchWaitTime: 2,
+				Client:        fake,
+			}
+			go le.ElectLeader()
+			time.Sleep(time.Duration(le.WatchWaitTime) * time.Second)
+			le.CancelElection()
+			err := le.StepDown()
+			isNotNil := (err != nil)
+			g.Assert(isNotNil).IsTrue()
+
+		})
+		g.It("StepDown()", func() {
+			fakeClient := FakeClient{Key: "service/leader-election/leader", GetKeyOutput: "kv"}
+			fake := &FakeConsulClient{Client: fakeClient}
+			le := LeaderElection{
+				LeaderKey:     fakeClient.Key,
+				StopElection:  make(chan bool),
+				WatchWaitTime: 2,
+				Client:        fake,
+			}
+			go le.ElectLeader()
+			time.Sleep(time.Duration(le.WatchWaitTime) * time.Second)
+			le.CancelElection()
+			le.StepDown()
+			g.Assert(le.IsLeader()).IsFalse()
+
+		})
+		g.It("ElectLeader() Failure", func() {
+			fakeClient := FakeClient{Key: "service/leader-election/leader", AquireKeyError: true}
+			fake := &FakeConsulClient{Client: fakeClient}
+			le := LeaderElection{
+				LeaderKey:     fakeClient.Key,
+				StopElection:  make(chan bool),
+				WatchWaitTime: 2,
+				Client:        fake,
+			}
+			go le.ElectLeader()
+			time.Sleep(time.Duration(le.WatchWaitTime) * time.Second)
+			le.CancelElection()
+			g.Assert(le.IsLeader()).IsFalse()
+		})
+		g.It("ElectLeader()", func() {
+			fakeClient := FakeClient{Key: "service/leader-election/leader"}
+			fake := &FakeConsulClient{Client: fakeClient}
+			le := LeaderElection{
+				LeaderKey:     fakeClient.Key,
+				StopElection:  make(chan bool),
+				WatchWaitTime: 2,
+				Client:        fake,
+			}
+			go le.ElectLeader()
+			time.Sleep(time.Duration(le.WatchWaitTime) * time.Second)
+			le.CancelElection()
+			g.Assert(le.IsLeader()).IsTrue()
+		})
+		g.It("CancelElection()", func() {
+			fakeClient := FakeClient{Key: "service/leader-election/leader", GetKeyOutput: "kv"}
+			fake := &FakeConsulClient{Client: fakeClient}
+			le := LeaderElection{
+				LeaderKey:     fakeClient.Key,
 				StopElection:  make(chan bool),
 				WatchWaitTime: 1,
 				Client:        fake,
 			}
 			go le.ElectLeader()
-			time.Sleep(3 * time.Second)
 			le.CancelElection()
 			g.Assert(le.IsLeader()).IsTrue()
-			//_ = le.StepDown()
 		})
-		/*
-			g.It("can release leadership", func() {
-				le := LeaderElection{
-					LeaderKey:     "service/leader-election/leader",
-					StopElection:  make(chan bool),
-					WatchWaitTime: 1,
-				}
-				go le.ElectLeader()
-				time.Sleep(3 * time.Second)
-				le.CancelElection()
-				g.Assert(le.IsLeader()).IsTrue()
-				_ = le.StepDown()
-				g.Assert(le.IsLeader()).IsFalse()
-			})
-		*/
+
+		g.It("IsLeader()", func() {
+			fakeClient := FakeClient{Key: "service/leader-election/leader"}
+			fake := &FakeConsulClient{Client: fakeClient}
+			le := LeaderElection{
+				LeaderKey:     fakeClient.Key,
+				StopElection:  make(chan bool),
+				WatchWaitTime: 1,
+				Client:        fake,
+			}
+
+			g.Assert(le.IsLeader()).IsFalse()
+
+			fakeClient = FakeClient{Key: "service/leader-election/leader", GetKeyOutput: "kv"}
+			fake = &FakeConsulClient{Client: fakeClient}
+			le = LeaderElection{
+				LeaderKey:     fakeClient.Key,
+				StopElection:  make(chan bool),
+				WatchWaitTime: 1,
+				Client:        fake,
+			}
+
+			g.Assert(le.IsLeader()).IsTrue()
+		})
 	})
 
 }
