@@ -3,33 +3,32 @@ package client
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/hashicorp/consul/api"
-	"github.com/dpires/consul-leader-election"
 )
 
 type ConsulClient struct {
 	Client *api.Client
 }
 
-func (cc *ConsulClient) GetSession(sessionName string, le *election.LeaderElection) {
+func (cc *ConsulClient) GetSession(sessionName string) string {
 	name := cc.GetAgentName()
 	sessions, _, err := cc.Client.Session().List(nil)
 	for _, session := range sessions {
 		if session.Name == sessionName && session.Node == name {
-			le.Session = session.ID
-			break
+			return session.ID
 		}
 	}
-	if le.Session == "" {
-		log.Info("No leadership sessions found, creating...")
-		sessionEntry := &api.SessionEntry{Name: sessionName}
-		le.Session, _, err = cc.Client.Session().Create(sessionEntry, nil)
-		if err != nil {
-			log.Warn(err)
-		}
+
+	log.Info("No leadership sessions found, creating...")
+
+	sessionEntry := &api.SessionEntry{Name: sessionName}
+	session, _, err := cc.Client.Session().Create(sessionEntry, nil)
+	if err != nil {
+		log.Warn(err)
 	}
+	return session
 }
 
-func (cc *ConsulClient) AquireKey(key string, session string, le *election.LeaderElection) (bool, error) {
+func (cc *ConsulClient) AquireKey(key string, session string) (bool, error) {
 
 	pair := &api.KVPair{
 		Key:     key,

@@ -10,12 +10,11 @@ type ConsulInterface interface {
 	GetAgentName() string
 	GetKey(string) *api.KVPair
 	ReleaseKey(*api.KVPair) (bool, error)
-	GetSession(string, *LeaderElection)
-	AquireKey(string, string, *LeaderElection) (bool, error)
+	GetSession(string) string
+	AquireKey(string, string) (bool, error)
 }
 
 type LeaderElection struct {
-	Session       string
 	LeaderKey     string
 	WatchWaitTime int
 	StopElection  chan bool
@@ -30,8 +29,8 @@ func (le *LeaderElection) StepDown() error {
 	if le.IsLeader() {
 		client := le.Client
 		name := client.GetAgentName()
-		le.GetSession(le.LeaderKey)
-		key := &api.KVPair{Key: le.LeaderKey, Value: []byte(name), Session: le.Session}
+		session := le.GetSession(le.LeaderKey)
+		key := &api.KVPair{Key: le.LeaderKey, Value: []byte(name), Session: session}
 		released, err := client.ReleaseKey(key)
 		if !released || err != nil {
 			return err
@@ -45,18 +44,20 @@ func (le *LeaderElection) StepDown() error {
 func (le *LeaderElection) IsLeader() bool {
 	client := le.Client
 	name := client.GetAgentName()
-	le.GetSession(le.LeaderKey)
+	session := le.GetSession(le.LeaderKey)
 	kv := client.GetKey(le.LeaderKey)
 	if kv == nil {
 		log.Info("Leadership key is missing")
 		return false
 	}
 
-	return name == string(kv.Value) && le.Session == kv.Session
+	return name == string(kv.Value) && session == kv.Session
 }
-func (le *LeaderElection) GetSession(sessionName string) {
+
+func (le *LeaderElection) GetSession(sessionName string) string {
 	client := le.Client
-	client.GetSession(sessionName, le)
+	session := client.GetSession(sessionName)
+	return session
 }
 
 func (le *LeaderElection) ElectLeader() {
@@ -71,9 +72,9 @@ func (le *LeaderElection) ElectLeader() {
 		default:
 			if !le.IsLeader() {
 
-				le.GetSession(le.LeaderKey)
+				session := le.GetSession(le.LeaderKey)
 
-				aquired, err := client.AquireKey(le.LeaderKey, le.Session, le)
+				aquired, err := client.AquireKey(le.LeaderKey, session)
 
 				if aquired {
 					log.Infof("%s is now the leader", name)

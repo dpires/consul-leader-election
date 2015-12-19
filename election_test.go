@@ -38,15 +38,14 @@ func (fcc *FakeConsulClient) ReleaseKey(keyPair *api.KVPair) (bool, error) {
 	return true, nil
 }
 
-func (fcc *FakeConsulClient) GetSession(name string, le *LeaderElection) {
-	le.Session = name
+func (fcc *FakeConsulClient) GetSession(name string) string {
+	return name
 }
 
-func (fcc *FakeConsulClient) AquireKey(key string, session string, le *LeaderElection) (bool, error) {
+func (fcc *FakeConsulClient) AquireKey(key string, session string) (bool, error) {
 	if fcc.Client.AquireKeyError {
 		return false, errors.New("ERROR")
 	}
-	le.Session = fcc.Client.Key
 	fcc.Client.GetKeyOutput = "kv"
 	return true, nil
 }
