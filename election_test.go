@@ -19,6 +19,9 @@ type FakeConsulClient struct {
 	Client FakeClient
 }
 
+func (fcc *FakeConsulClient) GetHealthChecks(state string, options *api.QueryOptions) ([]*api.HealthCheck, error) {
+    return nil, nil
+} 
 func (fcc *FakeConsulClient) GetAgentName() string {
 	return "my node"
 }

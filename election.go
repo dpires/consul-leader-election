@@ -12,6 +12,7 @@ type ConsulInterface interface {
 	ReleaseKey(*api.KVPair) (bool, error)
 	GetSession(string) string
 	AquireKey(string, string) (bool, error)
+        GetHealthChecks(state string, options *api.QueryOptions) ([]*api.HealthCheck, error)
 }
 
 type LeaderElection struct {
