@@ -9,6 +9,11 @@ type ConsulClient struct {
 	Client *api.Client
 }
 
+func (cc *ConsulClient) GetHealthChecks(state string, options *api.QueryOptions) ([]api.HealthCheck, error) {
+    checks, _, err := cc.Client.Health().State("any", &options})
+    return checks, err
+}
+
 func (cc *ConsulClient) GetSession(sessionName string) string {
 	name := cc.GetAgentName()
 	sessions, _, err := cc.Client.Session().List(nil)
