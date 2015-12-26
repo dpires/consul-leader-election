@@ -10,7 +10,7 @@ type ConsulClient struct {
 }
 
 func (cc *ConsulClient) GetHealthChecks(state string, options *api.QueryOptions) ([]api.HealthCheck, error) {
-    checks, _, err := cc.Client.Health().State("any", &options})
+    checks, _, err := cc.Client.Health().State("any", &options)
     return checks, err
 }
 
