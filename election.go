@@ -11,7 +11,8 @@ type ConsulInterface interface {
 	GetKey(string) *api.KVPair
 	ReleaseKey(*api.KVPair) (bool, error)
 	GetSession(string) string
-	AquireKey(string, string) (bool, error)
+        AquireKey(string) (bool, error)
+	AquireSessionKey(string, string) (bool, error)
         GetHealthChecks(state string, options *api.QueryOptions) ([]*api.HealthCheck, error)
 }
 
@@ -75,7 +76,7 @@ func (le *LeaderElection) ElectLeader() {
 
 				session := le.GetSession(le.LeaderKey)
 
-				aquired, err := client.AquireKey(le.LeaderKey, session)
+				aquired, err := client.AquireSessionKey(le.LeaderKey, session)
 
 				if aquired {
 					log.Infof("%s is now the leader", name)
