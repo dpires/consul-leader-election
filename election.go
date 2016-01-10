@@ -8,7 +8,7 @@ import (
 
 type ConsulInterface interface {
 	GetAgentName() string
-	GetKey(string) *api.KVPair
+	GetKey(string) (*api.KVPair, error)
 	ReleaseKey(*api.KVPair) (bool, error)
 	GetSession(string) string
         AquireKey(string) (bool, error)
@@ -47,7 +47,11 @@ func (le *LeaderElection) IsLeader() bool {
 	client := le.Client
 	name := client.GetAgentName()
 	session := le.GetSession(le.LeaderKey)
-	kv := client.GetKey(le.LeaderKey)
+	kv, err := client.GetKey(le.LeaderKey)
+        if err != nil {
+            log.Error(err)
+            return false
+        }
 	if kv == nil {
 		log.Info("Leadership key is missing")
 		return false
@@ -88,12 +92,17 @@ func (le *LeaderElection) ElectLeader() {
 
 			}
 
-			kv := client.GetKey(le.LeaderKey)
+			kv, err := client.GetKey(le.LeaderKey)
+                
+                        if err != nil {
+                            log.Error(err)
+                        } else {
 
-			if kv != nil && kv.Session != "" {
-				log.Info("Current leader: ", string(kv.Value))
-				log.Info("Leader Session: ", string(kv.Session))
-			}
+                            if kv != nil && kv.Session != "" {
+                                    log.Info("Current leader: ", string(kv.Value))
+                                    log.Info("Leader Session: ", string(kv.Session))
+                            }
+                        }
 
 			time.Sleep(time.Duration(le.WatchWaitTime) * time.Second)
 		}

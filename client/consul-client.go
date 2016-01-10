@@ -62,9 +62,9 @@ func (cc *ConsulClient) GetAgentName() string {
 	return agent["Config"]["NodeName"].(string)
 }
 
-func (cc *ConsulClient) GetKey(keyName string) *api.KVPair {
-	kv, _, _ := cc.Client.KV().Get(keyName, nil)
-	return kv
+func (cc *ConsulClient) GetKey(keyName string) (*api.KVPair, error) {
+	kv, _, err := cc.Client.KV().Get(keyName, nil)
+	return kv, err
 
 }
 

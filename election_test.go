@@ -25,12 +25,12 @@ func (fcc *FakeConsulClient) GetHealthChecks(state string, options *api.QueryOpt
 func (fcc *FakeConsulClient) GetAgentName() string {
 	return "my node"
 }
-func (fcc *FakeConsulClient) GetKey(key string) *api.KVPair {
+func (fcc *FakeConsulClient) GetKey(key string) (*api.KVPair, error) {
 	kv := &api.KVPair{Key: key, Value: []byte("my node"), Session: fcc.Client.Key}
 	if fcc.Client.GetKeyOutput == "kv" {
-		return kv
+		return kv, nil
 	}
-	return nil
+	return nil, nil
 }
 
 func (fcc *FakeConsulClient) ReleaseKey(keyPair *api.KVPair) (bool, error) {
