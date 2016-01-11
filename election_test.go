@@ -20,8 +20,8 @@ type FakeConsulClient struct {
 }
 
 func (fcc *FakeConsulClient) GetHealthChecks(state string, options *api.QueryOptions) ([]*api.HealthCheck, error) {
-    return nil, nil
-} 
+	return nil, nil
+}
 func (fcc *FakeConsulClient) GetAgentName() string {
 	return "my node"
 }
@@ -46,7 +46,7 @@ func (fcc *FakeConsulClient) GetSession(name string) string {
 }
 
 func (fcc *FakeConsulClient) AquireKey(key string) (bool, error) {
-    return false, nil
+	return false, nil
 }
 
 func (fcc *FakeConsulClient) AquireSessionKey(key string, session string) (bool, error) {

@@ -11,9 +11,9 @@ type ConsulInterface interface {
 	GetKey(string) (*api.KVPair, error)
 	ReleaseKey(*api.KVPair) (bool, error)
 	GetSession(string) string
-        AquireKey(string) (bool, error)
+	AquireKey(string) (bool, error)
 	AquireSessionKey(string, string) (bool, error)
-        GetHealthChecks(state string, options *api.QueryOptions) ([]*api.HealthCheck, error)
+	GetHealthChecks(state string, options *api.QueryOptions) ([]*api.HealthCheck, error)
 }
 
 type LeaderElection struct {
@@ -48,10 +48,10 @@ func (le *LeaderElection) IsLeader() bool {
 	name := client.GetAgentName()
 	session := le.GetSession(le.LeaderKey)
 	kv, err := client.GetKey(le.LeaderKey)
-        if err != nil {
-            log.Error(err)
-            return false
-        }
+	if err != nil {
+		log.Error(err)
+		return false
+	}
 	if kv == nil {
 		log.Info("Leadership key is missing")
 		return false
@@ -93,16 +93,16 @@ func (le *LeaderElection) ElectLeader() {
 			}
 
 			kv, err := client.GetKey(le.LeaderKey)
-                
-                        if err != nil {
-                            log.Error(err)
-                        } else {
 
-                            if kv != nil && kv.Session != "" {
-                                    log.Info("Current leader: ", string(kv.Value))
-                                    log.Info("Leader Session: ", string(kv.Session))
-                            }
-                        }
+			if err != nil {
+				log.Error(err)
+			} else {
+
+				if kv != nil && kv.Session != "" {
+					log.Info("Current leader: ", string(kv.Value))
+					log.Info("Leader Session: ", string(kv.Session))
+				}
+			}
 
 			time.Sleep(time.Duration(le.WatchWaitTime) * time.Second)
 		}
