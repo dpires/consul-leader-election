@@ -45,10 +45,6 @@ func (fcc *FakeConsulClient) GetSession(name string) string {
 	return name
 }
 
-func (fcc *FakeConsulClient) AquireKey(key string) (bool, error) {
-	return false, nil
-}
-
 func (fcc *FakeConsulClient) AquireSessionKey(key string, session string) (bool, error) {
 	if fcc.Client.AquireKeyError {
 		return false, errors.New("ERROR")

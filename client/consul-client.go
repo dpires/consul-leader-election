@@ -33,17 +33,6 @@ func (cc *ConsulClient) GetSession(sessionName string) string {
 	return session
 }
 
-func (cc *ConsulClient) AquireKey(key string) (bool, error) {
-	pair := &api.KVPair{
-		Key:     key,
-		Value:   []byte(cc.GetAgentName()),
-	}
-
-	aquired, _, err := cc.Client.KV().Acquire(pair, nil)
-
-	return aquired, err
-}
-
 func (cc *ConsulClient) AquireSessionKey(key string, session string) (bool, error) {
 
 	pair := &api.KVPair{

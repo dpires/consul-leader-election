@@ -11,7 +11,6 @@ type ConsulInterface interface {
 	GetKey(string) (*api.KVPair, error)
 	ReleaseKey(*api.KVPair) (bool, error)
 	GetSession(string) string
-	AquireKey(string) (bool, error)
 	AquireSessionKey(string, string) (bool, error)
 	GetHealthChecks(state string, options *api.QueryOptions) ([]*api.HealthCheck, error)
 }
