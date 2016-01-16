@@ -9,6 +9,7 @@ import (
 type ConsulInterface interface {
 	GetAgentName() string
 	GetKey(string) (*api.KVPair, error)
+        PutKey(string) (error)
 	ReleaseKey(*api.KVPair) (bool, error)
 	GetSession(string) string
 	AquireSessionKey(string, string) (bool, error)
