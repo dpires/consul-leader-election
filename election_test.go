@@ -26,7 +26,7 @@ func (fcc *FakeConsulClient) GetAgentName() string {
 	return "my node"
 }
 
-func (fcc *FakeConsulClient) PutKey(key string) error {
+func (fcc *FakeConsulClient) PutKey(key *api.KVPair) error {
 	return nil
 }
 
