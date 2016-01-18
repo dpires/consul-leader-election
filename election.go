@@ -48,11 +48,10 @@ func (le *LeaderElection) IsLeader() bool {
 	name := client.GetAgentName()
 	session := le.GetSession(le.LeaderKey)
 	kv, err := client.GetKey(le.LeaderKey)
-	if err != nil {
-		log.Error(err)
-		return false
-	}
-	if kv == nil {
+	if err != nil || kv == nil {
+		if err != nil {
+			log.Error(err)
+		}
 		log.Info("Leadership key is missing")
 		return false
 	}
