@@ -35,7 +35,7 @@ func (fcc *FakeConsulClient) GetKey(key string) (*api.KVPair, error) {
 	if fcc.Client.GetKeyOutput == "kv" {
 		return kv, nil
 	}
-	return nil, nil
+	return nil, errors.New("Key not found")
 }
 
 func (fcc *FakeConsulClient) ReleaseKey(keyPair *api.KVPair) (bool, error) {
